@@ -1,6 +1,7 @@
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { EDX2 } from "./EDX2";
-import { box, randomBytes } from "tweetnacl";
+import { box, randomBytes, sign } from "tweetnacl";
+import { Sha256 } from "@aws-crypto/sha256-browser";
 
 /**
  * An encrypted message, which includes both the encrypted data and the nonce it was encrypted with.
@@ -86,6 +87,22 @@ export function decryptMessage(
     }
 
     return opened;
+}
+
+/**
+ * Generates a derived keypair from a signature of an inacessible Master Key with only the
+ * sign() function exposed. Care must be taken to inform the user not to create a duplicate signature
+ * elsewhere or the derived key (not the master key) could be compromised
+ *
+ * See: https://crypto.stackexchange.com/questions/67291/generating-a-key-pair-using-a-signature-generated-by-an-existing-key
+ *
+ * @param signature
+ * @returns The derived keypair
+ */
+export async function deriveKey(signature: Uint8Array) {
+    const hash = new Sha256();
+    hash.update(signature);
+    return Keypair.fromSeed(await hash.digest());
 }
 
 /**
